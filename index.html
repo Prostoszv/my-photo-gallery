@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>Монохром | Галерея</title>
+    <title>Монохром | Мои фотографии</title>
     
-    <!-- Firebase SDK с CDN (будет работать на iOS) -->
+    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
     
@@ -78,27 +78,35 @@
         .content h1 small { display: block; font-size: 0.8rem; color: #777; margin-top: 8px; }
         .content h2 { color: #e0e0e0; font-size: 1.3rem; font-weight: 300; border-bottom: 1px solid #2a2a2a; padding-bottom: 10px; margin: 35px 0 25px; }
         
-        /* Сетка фото */
+        /* Сетка фото - для 3 фото будет красиво */
         .photos-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-            gap: 25px;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 30px;
             margin: 30px 0;
         }
         .photo-item {
             background: #111;
             border: 1px solid #2a2a2a;
-            transition: transform 0.3s;
+            transition: transform 0.3s, box-shadow 0.3s;
             overflow: hidden;
         }
-        .photo-item:hover { transform: translateY(-5px); border-color: #444; }
-        .photo-image { width: 100%; height: 240px; overflow: hidden; background: #000; }
-        .photo-image img { width: 100%; height: 100%; object-fit: cover; display: block; }
-        .photo-info { padding: 16px; }
+        .photo-item:hover { transform: translateY(-5px); box-shadow: 0 10px 25px rgba(0,0,0,0.5); border-color: #444; }
+        .photo-image { width: 100%; height: 280px; overflow: hidden; background: #000; }
+        .photo-image img { 
+            width: 100%; 
+            height: 100%; 
+            object-fit: cover; 
+            display: block; 
+            transition: transform 0.4s;
+            filter: grayscale(100%);
+        }
+        .photo-item:hover .photo-image img { transform: scale(1.03); }
+        .photo-info { padding: 18px; }
         .photo-title {
             color: white;
-            font-size: 1.1rem;
-            margin-bottom: 8px;
+            font-size: 1.2rem;
+            margin-bottom: 10px;
             font-weight: 500;
         }
         .photo-title.editable, .photo-desc.editable {
@@ -112,7 +120,7 @@
             background: rgba(255,152,0,0.2);
             outline: 1px dashed #ff9800;
         }
-        .photo-desc { font-size: 0.85rem; color: #999; margin-bottom: 8px; line-height: 1.4; }
+        .photo-desc { font-size: 0.9rem; color: #aaa; margin-bottom: 10px; line-height: 1.5; }
         .photo-date { font-size: 11px; color: #666; font-style: italic; margin-top: 8px; }
         
         /* Редактирование */
@@ -123,6 +131,7 @@
             color: white;
             padding: 8px 10px;
             border-radius: 6px;
+            font-size: 14px;
         }
         .save-btn { background: #4caf50; color: white; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 12px; }
         .cancel-btn { background: #666; color: white; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 12px; }
@@ -140,7 +149,7 @@
             .left-side a:hover, .left-side a.active { border-left: none; border-bottom: 1px solid white; padding-left: 0; }
             .header { flex-direction: column; }
             .photos-grid { grid-template-columns: 1fr; }
-            .photo-image { height: 200px; }
+            .photo-image { height: 220px; }
         }
     </style>
 </head>
@@ -173,12 +182,13 @@
             <h1 id="home">MONOCHROME<br><small>Черно-белая фотография</small></h1>
             <div class="instruction" id="instructionMsg">💡 <strong>Режим правки выключен</strong> — нажмите кнопку «Режим правки» вверху, чтобы изменять названия и описания фотографий.</div>
             <div class="quote">«Черно-белая фотография — это не отсутствие цвета, это присутствие души кадра»</div>
-            <h2 id="gallery">📷 ГАЛЕРЕЯ • Ч/Б ФОТОГРАФИИ</h2>
+            <h2 id="gallery">📷 МОИ ФОТОГРАФИИ</h2>
             <div class="photos-grid" id="photosGrid"></div>
             <h2 id="about">О ПРОЕКТЕ</h2>
-            <p>Этот сайт — коллекция черно-белых фотографий. Включите <strong>режим правки</strong>, чтобы изменять названия и описания фотографий. Все изменения синхронизируются на всех устройствах.</p>
+            <p>Этот сайт — коллекция моих черно-белых фотографий. Включите <strong>режим правки</strong>, чтобы изменять названия и описания фотографий. Все изменения синхронизируются на всех устройствах.</p>
+            <p style="margin-top: 10px;">📍 Фотографии сделаны в моём родном городе: вывеска «Берегись Авто», дорога в село Озёрное и Заволжский химический завод имени Фрунзе.</p>
         </div>
-        <div class="footer"><p>© 2025 Монохромная галерея | Ч/Б фотография</p></div>
+        <div class="footer"><p>© 2025 Моя фотогалерея | Ч/Б фотография</p></div>
     </div>
 </div>
 
@@ -198,53 +208,55 @@
     let editMode = false;
     let currentPhotos = [];
     
-    // Фотографии (встроены прямо в код - будут видны ВСЕГДА на любом устройстве!)
+    // ========== ВАШИ ФОТОГРАФИИ (ТОЛЬКО ЭТИ 3) ==========
     const defaultPhotos = [
-        { id: 'photo1', title: 'Абстракция', description: 'Геометрические формы в монохроме. Минимализм и контраст.', date: '2024-01-15',
-          imageUrl: 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'600\' height=\'400\' viewBox=\'0 0 600 400\'%3E%3Crect width=\'600\' height=\'400\' fill=\'%23333333\'/%3E%3Ccircle cx=\'300\' cy=\'180\' r=\'80\' fill=\'%23555555\'/%3E%3Crect x=\'230\' y=\'260\' width=\'140\' height=\'100\' fill=\'%23444444\'/%3E%3C/svg%3E' },
-        { id: 'photo2', title: 'Горный пейзаж', description: 'Величие природы через контраст и тени. Альпийские луга.', date: '2024-02-20',
-          imageUrl: 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'600\' height=\'400\' viewBox=\'0 0 600 400\'%3E%3Crect width=\'600\' height=\'400\' fill=\'%23444444\'/%3E%3Cpolygon points=\'0,400 150,200 300,350 450,150 600,300 600,400\' fill=\'%23333333\'/%3E%3C/svg%3E' },
-        { id: 'photo3', title: 'Каменные джунгли', description: 'Архитектура в монохроме. Линии, формы, ритм большого города.', date: '2024-03-10',
-          imageUrl: 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'600\' height=\'400\' viewBox=\'0 0 600 400\'%3E%3Crect width=\'600\' height=\'400\' fill=\'%233a3a3a\'/%3E%3Crect x=\'50\' y=\'200\' width=\'60\' height=\'200\' fill=\'%23222222\'/%3E%3Crect x=\'130\' y=\'150\' width=\'60\' height=\'250\' fill=\'%23282828\'/%3E%3Crect x=\'210\' y=\'220\' width=\'60\' height=\'180\' fill=\'%231e1e1e\'/%3E%3Crect x=\'290\' y=\'120\' width=\'60\' height=\'280\' fill=\'%23303030\'/%3E%3C/svg%3E' },
-        { id: 'photo4', title: 'Портрет', description: 'Эмоция и светотень. В черно-белом портрете раскрывается характер.', date: '2024-03-25',
-          imageUrl: 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'600\' height=\'400\' viewBox=\'0 0 600 400\'%3E%3Crect width=\'600\' height=\'400\' fill=\'%23333333\'/%3E%3Cellipse cx=\'300\' cy=\'170\' rx=\'70\' ry=\'80\' fill=\'%23555555\'/%3E%3Ccircle cx=\'270\' cy=\'155\' r=\'8\' fill=\'%23777777\'/%3E%3Ccircle cx=\'330\' cy=\'155\' r=\'8\' fill=\'%23777777\'/%3E%3Cpath d=\'M260 210 Q300 240 340 210\' stroke=\'%23666666\' stroke-width=\'4\' fill=\'none\'/%3E%3C/svg%3E' },
-        { id: 'photo5', title: 'Дыхание леса', description: 'Текстура листьев, игра света. Природа без цвета говорит громче.', date: '2024-04-05',
-          imageUrl: 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'600\' height=\'400\' viewBox=\'0 0 600 400\'%3E%3Crect width=\'600\' height=\'400\' fill=\'%23444444\'/%3E%3Cpath d=\'M300 50 L350 150 L450 150 L370 210 L400 310 L300 250 L200 310 L230 210 L150 150 L250 150 Z\' fill=\'%23333333\'/%3E%3C/svg%3E' },
-        { id: 'photo6', title: 'Индустриальный ритм', description: 'Мост, металл, строгая геометрия. Промышленная эстетика.', date: '2024-04-18',
-          imageUrl: 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'600\' height=\'400\' viewBox=\'0 0 600 400\'%3E%3Crect width=\'600\' height=\'400\' fill=\'%23303030\'/%3E%3Cpath d=\'M0 250 Q150 200 300 250 Q450 300 600 250 L600 400 L0 400 Z\' fill=\'%23222222\'/%3E%3Crect x=\'150\' y=\'100\' width=\'20\' height=\'150\' fill=\'%23444444\'/%3E%3Crect x=\'430\' y=\'100\' width=\'20\' height=\'150\' fill=\'%23444444\'/%3E%3C/svg%3E' }
+        { 
+            id: 'photo1', 
+            title: 'Берегись Авто', 
+            description: 'Это фото я сделал, когда учился на первом курсе колледжа. Знак с историей.', 
+            imageUrl: 'БерегисьАвто.jpg',
+            date: '2023' 
+        },
+        { 
+            id: 'photo2', 
+            title: 'Дорога в даль', 
+            description: 'Фото дороги, уходящей вдаль. Сделано во время поездки в село Озёрное.', 
+            imageUrl: 'Дорога.jpg',
+            date: '2023' 
+        },
+        { 
+            id: 'photo3', 
+            title: 'Заволжский химический завод', 
+            description: 'Фотография одного из зданий ныне заброшенного Заволжского химического завода имени Фрунзе.', 
+            imageUrl: 'ЗХЗ.jpg',
+            date: '2023' 
+        }
     ];
     
-    // Функция для показа фото сразу (без ожидания Firebase)
+    // Функция для показа фото сразу
     function showPhotosImmediately() {
         currentPhotos = [...defaultPhotos];
         renderPhotos();
-        document.getElementById('syncStatusText').innerHTML = '📱 Локальный режим';
+        document.getElementById('syncStatusText').innerHTML = '📱 Загрузка...';
     }
     
-    // Инициализация Firebase с таймаутом для iOS
+    // Инициализация Firebase
     function initFirebase() {
         try {
-            // Показываем фото сразу, не дожидаясь Firebase
             showPhotosImmediately();
-            
-            // Пытаемся подключиться к Firebase в фоне
             setTimeout(() => {
                 try {
                     firebase.initializeApp(firebaseConfig);
                     database = firebase.database();
                     isFirebaseReady = true;
                     document.getElementById('syncStatusText').innerHTML = '🟢 Синхронизация активна';
-                    console.log("✅ Firebase подключена на iOS!");
-                    
-                    // Загружаем данные из Firebase
                     loadPhotosFromFirebase();
                 } catch(e) {
-                    console.log("Firebase на iOS не подключилась, работаем локально");
+                    console.log("Firebase не подключилась, работаем локально");
                     document.getElementById('syncStatusText').innerHTML = '📱 Локальный режим';
                 }
             }, 100);
         } catch(e) {
-            console.log("Ошибка Firebase:", e);
             document.getElementById('syncStatusText').innerHTML = '📱 Локальный режим';
         }
     }
@@ -259,17 +271,15 @@
                 currentPhotos = Object.entries(data).map(([id, val]) => ({ firebaseId: id, ...val }));
                 renderPhotos();
             } else {
-                // Сохраняем фото по умолчанию в Firebase
+                // Сохраняем ваши фото в Firebase
                 defaultPhotos.forEach(photo => {
                     const { id, ...data } = photo;
                     database.ref(`/photos/${id}`).set(data);
                 });
             }
-        }).catch(err => {
-            console.log("Ошибка чтения Firebase:", err);
-        });
+        }).catch(err => console.log("Ошибка чтения Firebase:", err));
         
-        // Слушаем изменения
+        // Слушаем изменения в реальном времени
         database.ref('/photos').on('value', snapshot => {
             const data = snapshot.val();
             if (data && Object.keys(data).length > 0) {
@@ -283,11 +293,16 @@
     function renderPhotos() {
         const grid = document.getElementById('photosGrid');
         if (!grid) return;
-        if (!currentPhotos.length) { grid.innerHTML = '<div style="text-align:center;padding:40px;">Загрузка...</div>'; return; }
+        if (!currentPhotos.length) { 
+            grid.innerHTML = '<div style="text-align:center;padding:40px;">Загрузка фотографий...</div>'; 
+            return; 
+        }
         
         grid.innerHTML = currentPhotos.map(photo => `
             <div class="photo-item" data-id="${photo.firebaseId || photo.id}">
-                <div class="photo-image"><img src="${photo.imageUrl}" alt="${escapeHtml(photo.title)}"></div>
+                <div class="photo-image">
+                    <img src="${photo.imageUrl}" alt="${escapeHtml(photo.title)}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'600\' height=\'400\' viewBox=\'0 0 600 400\'%3E%3Crect width=\'600\' height=\'400\' fill=\'%23333333\'/%3E%3Ctext x=\'300\' y=\'200\' text-anchor=\'middle\' fill=\'%23ffffff\'%3EФото не загружено%3C/text%3E%3C/svg%3E'">
+                </div>
                 <div class="photo-info">
                     <div class="photo-title editable" data-field="title" data-id="${photo.firebaseId || photo.id}">${escapeHtml(photo.title)}</div>
                     <div class="photo-desc editable" data-field="description" data-id="${photo.firebaseId || photo.id}">${escapeHtml(photo.description || '')}</div>
@@ -331,7 +346,6 @@
         controls.appendChild(saveBtn);
         controls.appendChild(cancelBtn);
         
-        const origContent = el.innerHTML;
         el.innerHTML = '';
         el.appendChild(input);
         el.appendChild(controls);
@@ -345,15 +359,27 @@
                 }
                 photo[field] = newVal;
                 el.innerText = newVal;
-            } else { el.innerText = oldVal; }
+            } else { 
+                el.innerText = oldVal; 
+            }
             if (editMode) attachEditListeners();
         };
+        
         saveBtn.onclick = save;
-        cancelBtn.onclick = () => { el.innerText = oldVal; if (editMode) attachEditListeners(); };
-        input.addEventListener('keypress', e => { if (e.key === 'Enter' && field !== 'description') save(); });
+        cancelBtn.onclick = () => { 
+            el.innerText = oldVal; 
+            if (editMode) attachEditListeners(); 
+        };
+        
+        input.addEventListener('keypress', e => { 
+            if (e.key === 'Enter' && field !== 'description') save(); 
+        });
     }
     
-    function escapeHtml(text) { if (!text) return ''; return text.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m])); }
+    function escapeHtml(text) { 
+        if (!text) return ''; 
+        return text.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m])); 
+    }
     
     function toggleEditMode() {
         editMode = !editMode;
@@ -362,24 +388,24 @@
         if (editMode) {
             btn.innerText = '👁️ Выйти из правки';
             btn.classList.add('active');
-            instr.innerHTML = '✏️ <strong>Режим правки включен!</strong> Нажмите на название или описание фото, чтобы изменить.';
+            instr.innerHTML = '✏️ <strong>Режим правки включен!</strong> Нажмите на название или описание любого фото, чтобы изменить их. Изменения увидят все пользователи!';
             instr.style.background = '#ff980025';
             instr.style.border = '1px solid #ff9800';
             attachEditListeners();
         } else {
             btn.innerText = '✏️ Режим правки';
             btn.classList.remove('active');
-            instr.innerHTML = '💡 <strong>Режим правки выключен</strong> — нажмите кнопку «Режим правки» вверху.';
+            instr.innerHTML = '💡 <strong>Режим правки выключен</strong> — нажмите кнопку «Режим правки» вверху, чтобы изменять названия и описания фотографий.';
             instr.style.background = '#1a1a1a';
             instr.style.border = 'none';
         }
     }
     
-    function scrollToSection(id) { document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' }); }
+    function scrollToSection(id) { 
+        document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' }); 
+    }
     
     document.getElementById('editModeBtn').addEventListener('click', toggleEditMode);
-    
-    // Запускаем
     initFirebase();
 </script>
 </body>
